@@ -6,7 +6,6 @@ Created on Mon Jan 20 20:23:37 2020
 """
 
 import nsepy
-from datetime import date
 
 class INSTRUMENT_DATA(object):
     
@@ -19,13 +18,18 @@ class INSTRUMENT_DATA(object):
         # call the nsepy wrapper to fetch historical data of the
         # requested symbol from the NSE website
         self.instrument_data = nsepy.get_history(self.symbol,
-                                           start=date(startDate[2],startDate[1],startDate[0]),
-                                           end=date(endDate[2],endDate[1],endDate[0]))
+                                           start=startDate,
+                                           end=endDate)
+        self.instrument_data.rename(columns={'Open':'open',
+                                             'High':'high',
+                                             'Low':'low',
+                                             'Close':'close',
+                                             'Volume':'volume'},inplace=True)
     
     def get_primeData(self):
         # function to return the primary OHLC and volume values as a
         # dataframe
-        temp_df = self.instrument_data.get(['Open','High','Low','Close','Volume'])
+        temp_df = self.instrument_data.get(['open','high','low','close','volume'])
         return temp_df
     
     def get_allData(self):
