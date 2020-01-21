@@ -48,9 +48,8 @@ def screenStocks(volumeCutoff=150000,position='long',bounce18=False,bounce50=Tru
 
             if position == 'long':
                 EMA_check = 
-                # create the object for long checks
+                # create the object for long position screening
                 bounceScreener_obj = BOUNCESCREENER(primaryData,EMA18,EMA50,EMA100,EMA200,MACD18,MACD50,STOCH5_33)
-
 
                 if bounce18:
                     if bounceScreener_obj.isInstrument_bounce18longMatch(): screendedInstruments['18 Bounce Long'].append(currentInstrument)
