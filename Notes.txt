@@ -1,0 +1,4 @@
+1) For 18EMA bounce BRITANNIA on 9-10-2019 with EMA check skipped can be used a test vector
+
+self.isEMA_StateLong
+
