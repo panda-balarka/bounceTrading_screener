@@ -22,10 +22,22 @@ class BOUNCESCREENER(object):
                       }
         self.STOCH = STOCH5_33
         
-    def longScreener_initParams(self,stochasticThreshold=30,stochasticTPeriod=5):
+    def longScreener_initParams(self,ignoreStochastic=False,stochasticThreshold=30,stochasticTPeriod=5,
+                                ignoreEMA=False):
+
+        self.isEMA_StateLong = False
+        self.isStochastics_OverSold = False
         
-        self.isEMA_StateLong = self.isEMA_Long(4)
-        self.isStochastics_OverSold = self.isSTOCH_OverSold(stochasticThreshold,stochasticTPeriod)
+        # Calcualte EMA long condition state
+        if ignoreEMA:
+            self.isEMA_StateLong = True
+        else:
+            self.isEMA_StateLong = self.isEMA_Long(EMAtest_Level,4)
+        # Calculate the Stochasitic condition state
+        if ignoreStochastic:
+            self.isStochastics_OverSold = True
+        else:
+            self.isStochastics_OverSold = self.isSTOCH_OverSold(stochasticThreshold,stochasticTPeriod)
         # used specifically for 18 bounce long
         self.MACD18_isPos = self.MACD_neg2pos('18',1)
         self.MACD50_isPos = self.MACD_neg2pos('50',1)
@@ -33,7 +45,7 @@ class BOUNCESCREENER(object):
         self.MACD50_Ok = self.isMACD_BullBearCross_OK('50',5)
         
 
-    def isEMA_Long(self,period=5):
+    def isEMA_Long(self,EMAtest_Level='Full',period=5):
         tempValue_list = [self.EMA18,self.EMA50,self.EMA100]
         # EMA200 Calculations are not so accurate, so ignored until an alternative solution can be implemented
         # tempValue_list = [self.EMA18,self.EMA50,self.EMA100,self.EMA200]
@@ -80,7 +92,7 @@ class BOUNCESCREENER(object):
         else:
             return False
     
-    def isCandle_BullishReversal(self,patternType,emaType):
+    def isCandle_BullishReversal(self,patternType,emaList):
         # each of the input parameter is a list of 2 or 3 values, 
         # if two : first element has the reversal candle info and the second has the confirmation candle info. 
         # This is used to checks if its a EMA bounce with Single Candle reversal or two candle reversal with original 
@@ -88,16 +100,11 @@ class BOUNCESCREENER(object):
         # if three : first element has the Bearish Candle info, the second element has the reversal candle info and 
         # the last element has the confirmation candle info. This function checks if its a EMA bounce with two candle 
         # trade through pattern
-        emaDict = {
-                    '18' : self.EMA18,
-                    '50' : self.EMA50,
-                    '100' : self.EMA100,
-                    }
         openVals = self.open[-patternType:]
         highVals = self.high[-patternType:]
         closeVals = self.close[-patternType:]
         lowVals = self.low[-patternType:]
-        emaVals = emaDict[emaType][-patternType:]
+        emaVals = emaList[-patternType:]
         if patternType == 2:
             rvrsCandle  = 0
             cnfrmCandle = 1
@@ -139,29 +146,56 @@ class BOUNCESCREENER(object):
             and (self.isStochastics_OverSold)
             and (self.MACD18_isPos)
             and (self.MACD50_isPos)
-            and (self.isCandle_BullishReversal(2,'18') or self.isCandle_BullishReversal(3,'18'))
+            and (self.isCandle_BullishReversal(2,self.EMA18) or self.isCandle_BullishReversal(3,self.EMA18))
             ):
             return True
         else:
             return False
 
     def isInstrument_bounce50longMatch(self):
+        # the EMA50 is not so accurate, so we try to screen the candle stick patterns with EMA50, 
+        # EMA50 + 0.5%(Close) and EMA100 - 0.5%(Close)
+        # max number of elements needed are the last 3
+        deltaPositive = 0.005 * self.close[-3:]
+        for posIdx in range(3):
+            EMA50_delP = self.EMA50[-posIdx-1] + deltaPositive[-posIdx-1]
+            EMA50_delN = self.EMA50[-posIdx-1] - deltaPositive[-posIdx-1]        
         if (    
                 (self.isEMA_StateLong)
             and (self.isStochastics_OverSold)
             and (self.MACD50_Ok)
-            and (self.isCandle_BullishReversal(2,'50') or self.isCandle_BullishReversal(3,'50'))
+            and (
+                 self.isCandle_BullishReversal(2,self.EMA50) 
+                 or self.isCandle_BullishReversal(3,self.EMA50)
+                 or self.isCandle_BullishReversal(2,EMA50_delP)
+                 or self.isCandle_BullishReversal(3,EMA50_delP)
+                 or self.isCandle_BullishReversal(2,EMA50_delN)
+                 or self.isCandle_BullishReversal(3,EMA50_delN))
             ):
             return True
         else:
             return False
 
     def isInstrument_bounce100longMatch(self):
+        # the EMA100 is not accurate, so we try to screen the candle stick patterns with EMA100, 
+        # EMA100 + 1%(Close) and EMA100 - 1%(Close)
+        # max number of elements needed are the last 3
+        deltaPositive = 0.01 * self.close[-3:]
+        for posIdx in range(3):
+            EMA100_delP = self.EMA100[-posIdx-1] + deltaPositive[-posIdx-1]
+            EMA100_delN = self.EMA100[-posIdx-1] - deltaPositive[-posIdx-1]
+
         if (    
                 (self.isEMA_StateLong)
             and (self.isStochastics_OverSold)
             and (self.MACD50_Ok)
-            and (self.isCandle_BullishReversal(2,'100') or self.isCandle_BullishReversal(3,'100'))
+            and (
+                 self.isCandle_BullishReversal(2,self.EMA100) 
+                 or self.isCandle_BullishReversal(3,self.EMA100)
+                 or self.isCandle_BullishReversal(2,EMA100_delP)
+                 or self.isCandle_BullishReversal(3,EMA100_delP)
+                 or self.isCandle_BullishReversal(2,EMA100_delN)
+                 or self.isCandle_BullishReversal(3,EMA100_delN))
             ):
             return True
         else:

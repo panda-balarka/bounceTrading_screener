@@ -11,7 +11,11 @@ from instrument_request import INSTRUMENT_DATA
 from technicalWrapper import TECH_FXS
 from screenAlgo import BOUNCESCREENER
 
-def screenStocks(volumeCutoff=150000,position='long',bounce18=False,bounce50=True,bounce100=False,endDate_select='Today'):
+def screenStocks(volumeCutoff=150000, position='long', endDate_select='Today',
+                 bounce18=False, ounce50=True, bounce100=False,
+                 ignoreStochastic = False, stochasticThreshold = 30, stochasticThreshold_period=5, 
+                 ignoreEMA=False,
+                 ):
     endDate = getDate_today() if endDate_select == 'Today' else getDate_yesterday()
     stocksList = NSE_TradedStocks(endDate)
     screendedInstruments = {
@@ -55,7 +59,8 @@ def screenStocks(volumeCutoff=150000,position='long',bounce18=False,bounce50=Tru
             if position == 'long':
                 # create the object for long position screening
                 bounceScreener_obj = BOUNCESCREENER(primaryData,EMA18,EMA50,EMA100,EMA200,MACD18,MACD50,STOCH5_33)
-                bounceScreener_obj.longScreener_initParams()
+                bounceScreener_obj.longScreener_initParams(ignoreStochastic,stochasticThreshold,stochasticThreshold_period,
+                                                           ignoreEMA)
 
                 if bounce18:
                     if bounceScreener_obj.isInstrument_bounce18longMatch(): screendedInstruments['18 Bounce Long'].append(currentInstrument)
