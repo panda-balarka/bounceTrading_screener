@@ -11,11 +11,14 @@ import requests
 
 class INSTRUMENT_DATA(object):
     
-    def __init__(self,symbol,API='NSE'):
+    def __init__(self,symbol,infoSource='NSE'):
         # initialises an object variable to store the SCRIP SYMBOL
         # used to fetch data from NSE
-        self.symbol = symbol
-        self.API = API
+        if infoSource == 'YAHOO':
+            self.symbol = symbol+'.NS'        
+        else:
+            self.symbol = symbol
+        self.API = infoSource
     
     def requestData(self,startDate,endDate,customSession=None):
         if self.API == 'NSE':
@@ -25,8 +28,10 @@ class INSTRUMENT_DATA(object):
                                                start=startDate,
                                                end=endDate)
         elif self.API == 'YAHOO':
-            self.instrument_data = web.DataReader(self.symbol, 'yahoo', startDate, endDate, session=customSession)
-            
+            if customSession != None:
+                self.instrument_data = web.DataReader(self.symbol, 'yahoo', startDate, endDate, session=customSession)
+            else:
+                self.instrument_data = web.DataReader(self.symbol, 'yahoo', startDate, endDate)
         self.instrument_data.rename(columns={'Open':'open',
                                              'High':'high',
                                              'Low':'low',
@@ -60,8 +65,8 @@ if __name__ == '__main__':
         print(temp_obj.get_primeData().tail())
         
     elif apiType == 'YAHOO':
-        proxies = {}
-        headers = {     "Accept":"application/json",
+        proxies = {'http': 'http:your proxy:8080'}
+        headers = { "Accept":"application/json",
                     'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
                     "Accept-Encoding":"none",
                     "Accept-Language":"en-US,en;q = 0.8",
@@ -75,7 +80,7 @@ if __name__ == '__main__':
             sess.proxies.update(proxies)
             
         # Load data of equity from SBIN
-        temp_obj = INSTRUMENT_DATA('SBIN.NS',apiType)    
+        temp_obj = INSTRUMENT_DATA('SBIN',apiType)    
         # Fetch the values from
         temp_obj.requestData(convertDate('01/01/2019'),convertDate('23/01/2020'),customSession=sess) 
         # Display the dataframe with the required results

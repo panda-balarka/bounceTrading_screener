@@ -12,8 +12,9 @@ from technicalWrapper import TECH_FXS
 from screenAlgo import BOUNCESCREENER
 
 import sys
+import requests
 
-def screenStocks(stocksList,
+def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
                  volumeCutoff=15000000, position='long', endDate=getDate_today(),historialDataTicks=3650,
                  bounce18=False, bounce50=True, bounce100=False,
                  ignoreStochastic = False, stochasticThreshold = 30, stochasticThreshold_period=3, 
@@ -34,8 +35,8 @@ def screenStocks(stocksList,
     printProgressBar(0,len(stocksList),prefix='Progress:', suffix = '{:15s}'.format('') , length = 50)
     for idx,currentInstrument in enumerate(stocksList):
         # fetch histrorical data of required equity instrument
-        temp_obj = INSTRUMENT_DATA(currentInstrument)
-        temp_obj.requestData(startDate,endDate)
+        temp_obj = INSTRUMENT_DATA(currentInstrument,stockInfo_source)
+        temp_obj.requestData(startDate,endDate,customSession)
         primaryData = temp_obj.get_primeData()
         del temp_obj
         # perform a volume sanity check
@@ -95,11 +96,37 @@ if __name__ == '__main__':
     
     #stocksList = NSE_TradedStocks(getDate_yesterday())
     stocksList = [*Nifty50(),*NiftyNext50()]
-    isDaily = False
+    isDaily = True
+    isCustomProxy = False
+    # Select the source for downloading the stock information. Option are NSE (from official NSE website using nsepy APIs or
+    # YAHOO (from yahoo finance using panda-webreader APIs)
+    stockSource = 'NSE'
+
+    # Configure any custom session to overcome proxy configurations
+    if isCustomProxy:
+        proxies = {'http': 'http:your proxy:8080',
+                    'https': 'https:your proxy:8080'}
+        headers = { "Accept":"application/json",
+                    'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+                    "Accept-Encoding":"none",
+                    "Accept-Language":"en-US,en;q = 0.8",
+                    "Connection":"keep-alive",
+                    "Referer":"https://cssspritegenerator.com",
+                    "User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML,like Gecko) Chrome/23.0.1271.64 Safari/537.11"
+                    }
+
+        with requests.Session() as sess:
+            sess.headers = headers
+            sess.proxies.update(proxies) 
+    else:
+        sess = None 
+
+    # Perform a daily scan or a customised scan
     if isDaily:
         # Daily
-        result = screenStocks(stocksList,endDate=getDate_yesterday(),
-                              volumeCutoff=100000,historialDataTicks=365,bounce18=True,bounce50=True,bounce100=True,
+        result = screenStocks(stocksList,stockInfo_source=stockSource,customSession=sess,
+                              endDate=getDate_yesterday(),volumeCutoff=100000,historialDataTicks=365,
+                              bounce18=True,bounce50=True,bounce100=True,
                               useDelta=False)
         if result[0] == 0:
             print(result[1])
@@ -113,7 +140,7 @@ if __name__ == '__main__':
         for i in range(screenFor):
             dateTemp = getDate_previous(i,getDate_yesterday())
             print(dateTemp.strftime("%d_%m"))
-            result = screenStocks(stocksList,
+            result = screenStocks(stocksList,stockInfo_source=stockSource,customSession=sess,
                                   volumeCutoff=1000000,endDate=dateTemp,historialDataTicks=365,
                                   bounce18=True,bounce50=True,bounce100=True,
                                   useDelta=False)
