@@ -6,7 +6,6 @@ Created on Tue Jan 21 07:21:41 2020
 """
 
 from talib.abstract import EMA,SMA,MACD,STOCH
-import numpy as np
 
 class TECH_FXS(object):
     

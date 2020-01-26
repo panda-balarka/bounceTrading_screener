@@ -4,3 +4,9 @@ __pycache__/instrument_request.cpython-37.pyc
 __pycache__/nselist.cpython-37.pyc
 __pycache__/screenAlgo.cpython-37.pyc
 __pycache__/technicalWrapper.cpython-37.pyc
+screener_backend/__pycache__/__init__.cpython-37.pyc
+screener_backend/__pycache__/auxFuncs.cpython-37.pyc
+screener_backend/__pycache__/instrument_request.cpython-37.pyc
+screener_backend/__pycache__/nselist.cpython-37.pyc
+screener_backend/__pycache__/screenAlgo.cpython-37.pyc
+screener_backend/__pycache__/technicalWrapper.cpython-37.pyc

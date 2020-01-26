@@ -8,15 +8,16 @@ TODO: Many check function boundary conditions with respect to list lengths missi
 
 class BOUNCESCREENER(object):
 
-    def __init__(self,dataFrame,EMA18,EMA50,EMA100,EMA200,MACD18,MACD50,STOCH5_33):
+    def __init__(self,dataFrame,EMA18,EMA20,EMA50,EMA100,EMA150,MACD18,MACD50,STOCH5_33):
         self.open = dataFrame['open'].tolist()
         self.high = dataFrame['high'].tolist()
         self.close = dataFrame['close'].tolist()
         self.low = dataFrame['low'].tolist()
         self.EMA18 = EMA18.tolist()
+        self.EMA20 = EMA20.tolist()
         self.EMA50 = EMA50.tolist()
         self.EMA100 = EMA100.tolist()
-        self.EMA200 = EMA200.tolist()
+        self.EMA150 = EMA150.tolist()
         self.MACD = { '18' : MACD18,
                       '50' : MACD50
                       }
@@ -32,10 +33,12 @@ class BOUNCESCREENER(object):
         if ignoreEMA:
             self.isEMA_long = True
             self.isEMA18_long = True
+            self.isEMA20_long = True
             self.isEMA50_long = True
         else:
             self.isEMA_long = self.calcEMA_Long('All',EMA_period)
             self.isEMA18_long = self.calcEMA_Long('18',EMA_period)
+            self.isEMA20_long = self.calcEMA_Long('20',EMA_period)
             self.isEMA50_long = self.calcEMA_Long('50',EMA_period)
         # Calculate the Stochasitic condition state
         if ignoreStochastic:
@@ -51,8 +54,6 @@ class BOUNCESCREENER(object):
 
     def calcEMA_Long(self,EMA_type='All',period=5):
         try:
-            # EMA200 Calculations are not so accurate, so ignored until an alternative solution can be implemented
-            # tempValue_list = [self.EMA18,self.EMA50,self.EMA100,self.EMA200]
             if EMA_type == 'All':
                 tempValue_list = [self.EMA18,self.EMA50,self.EMA100]            
                 for emaListIdx in range(len(tempValue_list)-1):
@@ -64,6 +65,14 @@ class BOUNCESCREENER(object):
                 return True
             elif EMA_type == '18':
                 tempValue_list = [self.EMA18,self.EMA50] 
+                for value in range(period):
+                    if tempValue_list[0][-value-1] < tempValue_list[1][-value-1]:
+                        # if EMAa value falls below EMAb then the EMA suggests short position
+                        # so return False
+                        return False
+                return True
+            elif EMA_type == '20':
+                tempValue_list = [self.EMA20,self.EMA50] 
                 for value in range(period):
                     if tempValue_list[0][-value-1] < tempValue_list[1][-value-1]:
                         # if EMAa value falls below EMAb then the EMA suggests short position
@@ -219,6 +228,42 @@ class BOUNCESCREENER(object):
                 return False
         except:
             return False
+        
+    def isInstrument_bounce20longMatch(self,deltaAllowed=False,deltaValue=0.001):
+        try:
+            if self.EMA_check == 'All':
+                isEMA_StateLong = self.isEMA_long
+            else:
+                isEMA_StateLong = self.isEMA20_long
+            
+            candlePatternMatch = (self.isCandle_BullishReversal(2,self.EMA20) 
+                                  or self.isCandle_BullishReversal(3,self.EMA20))
+
+            if deltaAllowed:
+                delta = [deltaValue* closeElem for closeElem in self.close[-3:]]
+                EMA20_delP = [0,0,0]
+                EMA20_delN = [0,0,0]
+                for posIdx in range(3):
+                    EMA20_delP[-posIdx-1] = self.EMA20[-posIdx-1] + delta[-posIdx-1]
+                    EMA20_delN[-posIdx-1] = self.EMA20[-posIdx-1] - delta[-posIdx-1]
+                candlePatternMatch = (candlePatternMatch
+                                      or self.isCandle_BullishReversal(2,EMA20_delP)
+                                      or self.isCandle_BullishReversal(3,EMA20_delP)
+                                      or self.isCandle_BullishReversal(2,EMA20_delN)
+                                      or self.isCandle_BullishReversal(3,EMA20_delN))
+
+            if (    
+                    (isEMA_StateLong)
+                and (self.isStochastics_OverSold)
+                and (self.MACD18_isPos)
+                and (self.MACD50_isPos)
+                and (candlePatternMatch)
+                ):
+                return True
+            else:
+                return False
+        except:
+            return False        
 
     def isInstrument_bounce50longMatch(self,deltaAllowed=False,deltaValue=0.005):
         try:
@@ -263,6 +308,8 @@ class BOUNCESCREENER(object):
             if self.EMA_check == 'All':
                 isEMA_StateLong = self.isEMA_long
             else:
+                # EMA 100+ calculation are not so accurate, therefore use EMA50 to confirm an uptrend and manually
+                # check for the actual EMA trend style
                 isEMA_StateLong = self.isEMA50_long
 
             candlePatternMatch = (self.isCandle_BullishReversal(2,self.EMA100) 
@@ -295,6 +342,46 @@ class BOUNCESCREENER(object):
                 return False
         except:
             return False
+        
+    def isInstrument_bounce150longMatch(self,deltaAllowed=False,deltaValue=0.01):
+        try:
+            if self.EMA_check == 'All':
+                isEMA_StateLong = self.isEMA_long
+            else:
+                # EMA 100+ calculation are not so accurate, therefore use EMA50 to confirm an uptrend and manually
+                # check for the actual EMA trend style
+                isEMA_StateLong = self.isEMA50_long
+
+            candlePatternMatch = (self.isCandle_BullishReversal(2,self.EMA150) 
+                                  or self.isCandle_BullishReversal(3,self.EMA150))
+            
+            if deltaAllowed:
+                # the EMA100 is not accurate, so we try to screen the candle stick patterns with EMA100, 
+                # EMA100 + 1%(Close) and EMA100 - 1%(Close)
+                # max number of elements needed are the last 3
+                delta = [0.01 * closeElem for closeElem in self.close[-3:]]
+                EMA150_delP = [0,0,0]
+                EMA150_delN = [0,0,0]
+                for posIdx in range(3):
+                    EMA150_delP[-posIdx-1] = self.EMA150[-posIdx-1] + delta[-posIdx-1]
+                    EMA150_delN[-posIdx-1] = self.EMA150[-posIdx-1] - delta[-posIdx-1]
+                candlePatternMatch = (candlePatternMatch
+                                      or self.isCandle_BullishReversal(2,EMA150_delP)
+                                      or self.isCandle_BullishReversal(3,EMA150_delP)
+                                      or self.isCandle_BullishReversal(2,EMA150_delN)
+                                      or self.isCandle_BullishReversal(3,EMA150_delN))                    
+
+            if (    
+                    (isEMA_StateLong)
+                and (self.isStochastics_OverSold)
+                and (self.MACD50_Ok)
+                and (candlePatternMatch)
+                ):
+                return True
+            else:
+                return False
+        except:
+            return False        
 
     
 

@@ -91,7 +91,8 @@ def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
         return [0,screendedInstruments]
     else:
         return [1,screendedInstruments]
-                
+    
+                  
 if __name__ == '__main__':
     
     #stocksList = NSE_TradedStocks(getDate_yesterday())
