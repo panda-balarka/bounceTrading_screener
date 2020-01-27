@@ -5,27 +5,33 @@ Created on Mon Jan 20 22:50:10 2020
 @author: Balarka
 """
 
-from nselist import NSE_TradedStocks,Nifty50,NiftyNext50
-from auxFuncs import convertDate,getDate_previous,getDate_today,getDate_yesterday,printProgressBar
-from instrument_request import INSTRUMENT_DATA
-from technicalWrapper import TECH_FXS
-from screenAlgo import BOUNCESCREENER
+from screener_backend.nselist import NSE_TradedStocks,Nifty50,NiftyNext50
+from screener_backend.auxFuncs import convertDate,getDate_previous,getDate_today,getDate_yesterday,printProgressBar
+from screener_backend.auxFuncs import getPD_date
+from screener_backend.instrument_request import INSTRUMENT_DATA
+from screener_backend.technicalWrapper import TECH_FXS
+from screener_backend.bounceAlgo import BOUNCESCREENER
+from screener_backend.ipbAlgo import IPBSCREENER
 
 import sys
 import requests
 
 def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
                  volumeCutoff=15000000, position='long', endDate=getDate_today(),historialDataTicks=3650,
-                 bounce18=False, bounce50=True, bounce100=False,
                  ignoreStochastic = False, stochasticThreshold = 30, stochasticThreshold_period=3, 
                  ignoreEMA=False,EMA_check='All',
-                 useDelta=False,delta18=0.001,delta50=0.005,delta100=0.01
+                 bounce18=False, bounce20=False, bounce50=True, bounce100=False, bounce150=False,
+                 useDelta=False,delta18=0.001,delta20=0.001,delta50=0.005,delta100=0.01,delta150=0.01,
+                 ipbEMA_checkPeriod = 5,ipb_EMA_check='18>50',
                  ):
 
-    screendedInstruments = {
+    screenedInstruments = {
         '18 Bounce Long'  : [],
+        '20 Bounce Long'  : [],
         '50 Bounce Long'  : [],
-        '100 Bounce Long' : []
+        '100 Bounce Long' : [],
+        '150 Bounce Long' : [],
+        'ImpulsePullBack' : [],
     }
     # ensure this value is yesterday if the script is run in the morning before trading session
     # or should be today if the analysis is done after the close of the market for the present
@@ -46,14 +52,17 @@ def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
             # of the instruments        
             technical_obj = TECH_FXS(primaryData)
             # EMAs are Pandas Series type
+            EMA6 = technical_obj.getEMA(6)
             EMA18 = technical_obj.getEMA(18)
+            EMA20 = technical_obj.getEMA(20)
             EMA50 = technical_obj.getEMA(50)
             EMA100 = technical_obj.getEMA(100)
-            EMA200 = technical_obj.getSMA(200)
+            EMA150 = technical_obj.getEMA(150)
             # As the EMA values are not accurate for longer time periods, we use 
             # SMA as substitute and manually verify the same for the screened 
             # instruments
             # MACD and STOCHASTICS are both Pandas Dataframe type
+            MACD12 = technical_obj.getMACD(12,26,9)
             MACD50 = technical_obj.getMACD(50,100,9)
             MACD18 = technical_obj.getMACD(18,50,9)
             STOCH5_33 = technical_obj.getSTOCH(5,3,3)
@@ -61,20 +70,36 @@ def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
 
             if position == 'long':
                 # create the object for long position screening
-                bounceScreener_obj = BOUNCESCREENER(primaryData,EMA18,EMA50,EMA100,EMA200,MACD18,MACD50,STOCH5_33)
+                bounceScreener_obj = BOUNCESCREENER(primaryData,EMA18,EMA20,EMA50,EMA100,EMA150,MACD18,MACD50,STOCH5_33)
                 bounceScreener_obj.longScreener_initParams(ignoreStochastic,stochasticThreshold,stochasticThreshold_period,
                                                            ignoreEMA,EMA_check)
 
                 if bounce18:
-                    if bounceScreener_obj.isInstrument_bounce18longMatch(deltaAllowed=useDelta,deltaValue=delta18): screendedInstruments['18 Bounce Long'].append(currentInstrument)
+                    if bounceScreener_obj.isInstrument_bounce18longMatch(deltaAllowed=useDelta,deltaValue=delta18): screenedInstruments['18 Bounce Long'].append(currentInstrument)
+                    
+                if bounce20:
+                    if bounceScreener_obj.isInstrument_bounce20longMatch(deltaAllowed=useDelta,deltaValue=delta20): screenedInstruments['20 Bounce Long'].append(currentInstrument)                    
 
                 if bounce50:
-                    if bounceScreener_obj.isInstrument_bounce50longMatch(deltaAllowed=useDelta,deltaValue=delta50): screendedInstruments['50 Bounce Long'].append(currentInstrument)
+                    if bounceScreener_obj.isInstrument_bounce50longMatch(deltaAllowed=useDelta,deltaValue=delta50): screenedInstruments['50 Bounce Long'].append(currentInstrument)
 
                 if bounce100:
-                    if bounceScreener_obj.isInstrument_bounce100longMatch(deltaAllowed=useDelta,deltaValue=delta100): screendedInstruments['100 Bounce Long'].append(currentInstrument)                                       
+                    if bounceScreener_obj.isInstrument_bounce100longMatch(deltaAllowed=useDelta,deltaValue=delta100): screenedInstruments['100 Bounce Long'].append(currentInstrument)                                       
+
+                if bounce150:
+                    if bounceScreener_obj.isInstrument_bounce100longMatch(deltaAllowed=useDelta,deltaValue=delta150): screenedInstruments['100 Bounce Long'].append(currentInstrument)                                                           
                 
                 del bounceScreener_obj
+
+                ipbScreener_obj = IPBSCREENER(primaryData,EMA6,EMA18,EMA50,EMA100,MACD12)
+                ipbScreener_obj.longScreener_initParams(ipbEMA_checkPeriod,ipb_EMA_check) 
+                tempRes = ipbScreener_obj.isInstrument_impulsePullBack(MACD_check=True)
+                if tempRes[0]: 
+                    dateStr = '*'+'*'.join([getPD_date(dateVal).strftime("%d_%m_%Y") for dateVal in tempRes[1]])
+                    instrumentStr = currentInstrument + dateStr
+                    screenedInstruments['ImpulsePullBack'].append(instrumentStr)
+                
+                
                 
             else:
                 # code the short position calculations
@@ -84,13 +109,16 @@ def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
         printProgressBar(idx+1,len(stocksList),prefix='Progress:', suffix = '{:15s}'.format(currentInstrument), length = 50)
                 
     if (
-            len(screendedInstruments['18 Bounce Long']) > 0
-        or  len(screendedInstruments['50 Bounce Long']) > 0
-        or  len(screendedInstruments['100 Bounce Long']) > 0
+            len(screenedInstruments['18 Bounce Long']) > 0
+        or  len(screenedInstruments['20 Bounce Long']) > 0
+        or  len(screenedInstruments['50 Bounce Long']) > 0
+        or  len(screenedInstruments['100 Bounce Long']) > 0
+        or  len(screenedInstruments['150 Bounce Long']) > 0   
+        or  len(screenedInstruments['ImpulsePullBack']) > 0   
         ):
-        return [0,screendedInstruments]
+        return [0,screenedInstruments]
     else:
-        return [1,screendedInstruments]
+        return [1,screenedInstruments]
     
                   
 if __name__ == '__main__':
@@ -98,15 +126,15 @@ if __name__ == '__main__':
     #stocksList = NSE_TradedStocks(getDate_yesterday())
     stocksList = [*Nifty50(),*NiftyNext50()]
     isDaily = True
-    isCustomProxy = False
+    isCustomProxy = True
     # Select the source for downloading the stock information. Option are NSE (from official NSE website using nsepy APIs or
     # YAHOO (from yahoo finance using panda-webreader APIs)
-    stockSource = 'NSE'
+    stockSource = 'YAHOO'
 
     # Configure any custom session to overcome proxy configurations
     if isCustomProxy:
-        proxies = {'http': 'http:your proxy:8080',
-                    'https': 'https:your proxy:8080'}
+        proxies = {'http': 'http://user:pwd@proxy:8080',
+                   'https': 'https://user:pwd@proxy:8080'}
         headers = { "Accept":"application/json",
                     'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
                     "Accept-Encoding":"none",
@@ -126,11 +154,12 @@ if __name__ == '__main__':
     if isDaily:
         # Daily
         result = screenStocks(stocksList,stockInfo_source=stockSource,customSession=sess,
-                              endDate=getDate_yesterday(),volumeCutoff=100000,historialDataTicks=365,
+                              endDate=getDate_today(),volumeCutoff=100000,historialDataTicks=365,
                               bounce18=True,bounce50=True,bounce100=True,
                               useDelta=False)
         if result[0] == 0:
-            print(result[1])
+            for key,value in result[1].items():
+                print('{}:{}\n'.format(key,value))
         else:
             print('No instruments for screening criteria')
     else:       

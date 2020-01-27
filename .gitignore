@@ -10,3 +10,9 @@ screener_backend/__pycache__/instrument_request.cpython-37.pyc
 screener_backend/__pycache__/nselist.cpython-37.pyc
 screener_backend/__pycache__/screenAlgo.cpython-37.pyc
 screener_backend/__pycache__/technicalWrapper.cpython-37.pyc
+screener_backend/__pycache__/bounceAlgo.cpython-37.pyc
+screener_backend/__pycache__/instrument_request.cpython-36.pyc
+screener_backend/__pycache__/ipbAlgo.cpython-37.pyc
+__pycache__/auxFuncs.cpython-36.pyc
+__pycache__/instrument_request.cpython-36.pyc
+__pycache__/nselist.cpython-36.pyc

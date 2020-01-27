@@ -2,6 +2,8 @@
 """
 Created on Mon Jan 20 22:50:10 2020
 TODO: Many check function boundary conditions with respect to list lengths missing.
+      Currently, all list lengths used inside the screening and sanity functions expect the lenght of the list to 
+      be more than the threshold value or check period given
 
 @author: Balarka
 """

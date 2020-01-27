@@ -5,6 +5,7 @@ Created on Mon Jan 20 23:03:36 2020
 @author: a
 """
 from datetime import date,timedelta
+import pandas as pd
 
 def convertDate(ipdate):
     # generic date inputs can be seperated by the below seperators
@@ -29,6 +30,10 @@ def getDate_today():
 
 def getDate_yesterday():
     return (date.today() - timedelta(days=1))
+
+def getPD_date(ipdate):
+    return (pd.to_datetime(ipdate))
+    
 
 # Print iterations progress
 def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
