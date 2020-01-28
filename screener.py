@@ -5,7 +5,7 @@ Created on Mon Jan 20 22:50:10 2020
 @author: Balarka
 """
 
-from screener_backend.nselist import NSE_TradedStocks,Nifty50,NiftyNext50
+from screener_backend.nselist import NSE_TradedStocks,Nifty50,NiftyNext50,NSE_localAll
 from screener_backend.auxFuncs import convertDate,getDate_previous,getDate_today,getDate_yesterday,printProgressBar
 from screener_backend.auxFuncs import getPD_date
 from screener_backend.instrument_request import INSTRUMENT_DATA
@@ -124,7 +124,8 @@ def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
 if __name__ == '__main__':
     
     #stocksList = NSE_TradedStocks(getDate_yesterday())
-    stocksList = [*Nifty50(),*NiftyNext50()]
+    #stocksList = [*Nifty50(),*NiftyNext50()]
+    stocksList = NSE_localAll()
     isDaily = True
     isCustomProxy = True
     # Select the source for downloading the stock information. Option are NSE (from official NSE website using nsepy APIs or
