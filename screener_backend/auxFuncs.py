@@ -32,7 +32,11 @@ def getDate_yesterday():
     return (date.today() - timedelta(days=1))
 
 def getPD_date(ipdate):
-    return (pd.to_datetime(ipdate))
+    return (pd.Timestamp(ipdate).to_pydatetime(ipdate).date())
+
+
+def timeDiff_inDays(t1,t2):
+    return int(str(t1-t2).split(',')[0].strip(' days'))
     
 
 # Print iterations progress

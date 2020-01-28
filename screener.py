@@ -7,7 +7,7 @@ Created on Mon Jan 20 22:50:10 2020
 
 from screener_backend.nselist import NSE_TradedStocks,Nifty50,NiftyNext50,NSE_localAll
 from screener_backend.auxFuncs import convertDate,getDate_previous,getDate_today,getDate_yesterday,printProgressBar
-from screener_backend.auxFuncs import getPD_date
+from screener_backend.auxFuncs import getPD_date,timeDiff_inDays
 from screener_backend.instrument_request import INSTRUMENT_DATA
 from screener_backend.technicalWrapper import TECH_FXS
 from screener_backend.bounceAlgo import BOUNCESCREENER
@@ -22,7 +22,7 @@ def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
                  ignoreEMA=False,EMA_check='All',
                  bounce18=False, bounce20=False, bounce50=True, bounce100=False, bounce150=False,
                  useDelta=False,delta18=0.001,delta20=0.001,delta50=0.005,delta100=0.01,delta150=0.01,
-                 ipbEMA_checkPeriod = 5,ipb_EMA_check='18>50',
+                 ipbEMA_checkPeriod = 5,ipb_EMA_check='18>50', ipb_tracePeriod=15,
                  ):
 
     screenedInstruments = {
@@ -95,9 +95,17 @@ def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
                 ipbScreener_obj.longScreener_initParams(ipbEMA_checkPeriod,ipb_EMA_check) 
                 tempRes = ipbScreener_obj.isInstrument_impulsePullBack(MACD_check=True)
                 if tempRes[0]: 
-                    dateStr = '*'+'*'.join([getPD_date(dateVal).strftime("%d_%m_%Y") for dateVal in tempRes[1]])
-                    instrumentStr = currentInstrument + dateStr
-                    screenedInstruments['ImpulsePullBack'].append(instrumentStr)
+                    for dateVal in tempRes[1]:
+                        if stockSource == 'YAHOO':
+                            dateDiff = timeDiff_inDays(endDate,getPD_date(dateVal))
+                        else:
+                            dateDiff = timeDiff_inDays(endDate,dateVal)
+                            
+                        if dateDiff <= ipb_tracePeriod:
+                            dateStr = '*'+'*'.join([getPD_date(dateVal).strftime("%d_%m_%Y") for dateVal in tempRes[1]])
+                            instrumentStr = currentInstrument + dateStr
+                            screenedInstruments['ImpulsePullBack'].append(instrumentStr)                                
+
                 
                 
                 
@@ -123,14 +131,14 @@ def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
                   
 if __name__ == '__main__':
     
-    #stocksList = NSE_TradedStocks(getDate_yesterday())
+    stocksList = NSE_TradedStocks(getDate_today())
     #stocksList = [*Nifty50(),*NiftyNext50()]
-    stocksList = NSE_localAll()
+    #stocksList = NSE_localAll()
     isDaily = True
-    isCustomProxy = True
+    isCustomProxy = False
     # Select the source for downloading the stock information. Option are NSE (from official NSE website using nsepy APIs or
     # YAHOO (from yahoo finance using panda-webreader APIs)
-    stockSource = 'YAHOO'
+    stockSource = 'NSE'
 
     # Configure any custom session to overcome proxy configurations
     if isCustomProxy:
@@ -155,7 +163,7 @@ if __name__ == '__main__':
     if isDaily:
         # Daily
         result = screenStocks(stocksList,stockInfo_source=stockSource,customSession=sess,
-                              endDate=getDate_today(),volumeCutoff=100000,historialDataTicks=365,
+                              endDate=getDate_today(),volumeCutoff=10000,historialDataTicks=365,
                               bounce18=True,bounce50=True,bounce100=True,
                               useDelta=False)
         if result[0] == 0:
