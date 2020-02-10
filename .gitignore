@@ -16,3 +16,6 @@ screener_backend/__pycache__/ipbAlgo.cpython-37.pyc
 __pycache__/auxFuncs.cpython-36.pyc
 __pycache__/instrument_request.cpython-36.pyc
 __pycache__/nselist.cpython-36.pyc
+TempScan.txt
+screener_backend/__pycache__/intraday_instrument_request.cpython-37.pyc
+screener_backend/__pycache__/logger.cpython-37.pyc

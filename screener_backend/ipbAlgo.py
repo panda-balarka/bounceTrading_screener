@@ -8,10 +8,6 @@ TODO: Many check function boundary conditions with respect to list lengths missi
 @author: Balarka
 """
 
-#from screener_backend.instrument_request import INSTRUMENT_DATA
-#from screener_backend.auxFuncs import getDate_today,getDate_yesterday,getDate_previous
-#import requests
-
 class IPBSCREENER(object):
     
     def __init__(self,dataFrame,EMA6,EMA18,EMA50,EMA100,MACD12):
@@ -105,7 +101,7 @@ class IPBSCREENER(object):
             isMACD_bullish = (self.MACD12['macdhist'].tolist()[-1] > 0) or not(MACD_check)
             
             signalPos_list = []
-            #signalPos_list.append(self.getNeg2Pos_CrossOverPosition(self.MACD12['macdhist'].tolist()))
+            signalPos_list.append(self.getNeg2Pos_CrossOverPosition(self.MACD12['macdhist'].tolist()))
             
             if isMACD_bullish:
                 emaDiff_list = [self.EMA6[idx] - self.EMA18[idx] for idx in range(len(self.EMA6))] 

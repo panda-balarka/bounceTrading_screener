@@ -13,16 +13,36 @@ class TECH_FXS(object):
         self.data = ipData
         
     def getEMA(self,period=18):
-        return EMA(self.data,timeperiod=period)
+        try:
+            return EMA(self.data,timeperiod=period)
+        except:
+            return "ERROR"
     
     def getSMA(self,period=50):
-        return SMA(self.data,timeperiod=period)
+        try:
+            return SMA(self.data,timeperiod=period)
+        except:
+            return "ERROR"
     
     def getMACD(self,fastP=12,slowP=26,signalP=9):
-        return MACD(self.data,fastperiod=fastP,
-                       slowperiod=slowP,
-                       signalperdiod=signalP)
+        try:
+            return MACD(self.data,fastperiod=fastP,
+                        slowperiod=slowP,
+                        signalperdiod=signalP)
+        except:
+            return "ERROR"
     
     def getSTOCH(self,fastKPeriod=14,slowKPeriod=5,slowDPeriod=5):
-        return STOCH(self.data,fastk_period=fastKPeriod,slowk_period=slowKPeriod,slowd_period=slowDPeriod)
-
+        try:
+            return STOCH(self.data,fastk_period=fastKPeriod,slowk_period=slowKPeriod,slowd_period=slowDPeriod)
+        except:
+            return "ERROR"
+        
+    def getVWAP(self):
+        try:
+            cumulitiveVol = self.data['volume'].cumsum().tolist()
+            cumulitivePrice = (self.data['volume'] * (self.data['high'] + self.data['low'] + self.data['close'] + self.data['open'])/4).cumsum()
+            vwap = cumulitivePrice / cumulitiveVol
+            return vwap
+        except:
+            return "ERROR"

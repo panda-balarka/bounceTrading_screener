@@ -4,7 +4,6 @@ Created on Mon Jan 20 22:50:10 2020
 
 @author: Balarka
 """
-
 from screener_backend.nselist import NSE_TradedStocks,Nifty50,NiftyNext50,NSE_localAll
 from screener_backend.auxFuncs import convertDate,getDate_previous,getDate_today,getDate_yesterday,printProgressBar
 from screener_backend.auxFuncs import getPD_date,timeDiff_inDays
@@ -22,9 +21,9 @@ def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
                  ignoreEMA=False,EMA_check='All',
                  bounce18=False, bounce20=False, bounce50=True, bounce100=False, bounce150=False,
                  useDelta=False,delta18=0.001,delta20=0.001,delta50=0.005,delta100=0.01,delta150=0.01,
-                 ipbEMA_checkPeriod = 5,ipb_EMA_check='18>50', ipb_tracePeriod=15,
+                 ipbEMA_checkPeriod = 5,ipbMACD_filter=True,ipb_EMA_check='18>50', ipb_tracePeriod=15,
                  ):
-
+       
     screenedInstruments = {
         '18 Bounce Long'  : [],
         '20 Bounce Long'  : [],
@@ -45,6 +44,7 @@ def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
         temp_obj.requestData(startDate,endDate,customSession)
         primaryData = temp_obj.get_primeData()
         del temp_obj
+
         # perform a volume sanity check
         meanVolume = primaryData['volume'].mean()
         if meanVolume >= volumeCutoff:
@@ -67,6 +67,12 @@ def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
             MACD18 = technical_obj.getMACD(18,50,9)
             STOCH5_33 = technical_obj.getSTOCH(5,3,3)
             del technical_obj
+            
+            try:
+                if "ERROR" in [EMA6,EMA18,EMA20,EMA50,EMA100,EMA150,MACD12,MACD18,MACD50,STOCH5_33]:
+                    continue
+            except:
+                pass
 
             if position == 'long':
                 # create the object for long position screening
@@ -93,7 +99,7 @@ def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
 
                 ipbScreener_obj = IPBSCREENER(primaryData,EMA6,EMA18,EMA50,EMA100,MACD12)
                 ipbScreener_obj.longScreener_initParams(ipbEMA_checkPeriod,ipb_EMA_check) 
-                tempRes = ipbScreener_obj.isInstrument_impulsePullBack(MACD_check=True)
+                tempRes = ipbScreener_obj.isInstrument_impulsePullBack(MACD_check=ipbMACD_filter)
                 if tempRes[0]: 
                     for dateVal in tempRes[1]:
                         if stockSource == 'YAHOO':
@@ -104,11 +110,9 @@ def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
                         if dateDiff <= ipb_tracePeriod:
                             dateStr = '*'+'*'.join([getPD_date(dateVal).strftime("%d_%m_%Y") for dateVal in tempRes[1]])
                             instrumentStr = currentInstrument + dateStr
-                            screenedInstruments['ImpulsePullBack'].append(instrumentStr)                                
+                            screenedInstruments['ImpulsePullBack'].append(instrumentStr)  
+                del ipbScreener_obj                              
 
-                
-                
-                
             else:
                 # code the short position calculations
                 pass 
@@ -161,16 +165,31 @@ if __name__ == '__main__':
 
     # Perform a daily scan or a customised scan
     if isDaily:
+        endDate = getDate_today()
+        print('Results with Strict Screening')
         # Daily
         result = screenStocks(stocksList,stockInfo_source=stockSource,customSession=sess,
-                              endDate=getDate_today(),volumeCutoff=10000,historialDataTicks=365,
+                              endDate=endDate,volumeCutoff=10000,historialDataTicks=365,
                               bounce18=True,bounce50=True,bounce100=True,
-                              useDelta=False)
+                              useDelta=False,ipbMACD_filter=False,ipb_tracePeriod=5)
         if result[0] == 0:
             for key,value in result[1].items():
                 print('{}:{}\n'.format(key,value))
         else:
             print('No instruments for screening criteria')
+        print('\nResults with Lenient Screening')
+        # Daily
+        result = screenStocks(stocksList,stockInfo_source=stockSource,customSession=sess,
+                              endDate=endDate,volumeCutoff=10000,historialDataTicks=365,
+                              EMA_check = 'Step',
+                              ignoreStochastic = True,
+                              bounce18=True,bounce50=True,bounce100=True,
+                              useDelta=False,ipbMACD_filter=False,ipb_tracePeriod=5)
+        if result[0] == 0:
+            for key,value in result[1].items():
+                print('{}:{}\n'.format(key,value))
+        else:
+            print('No instruments for screening criteria')            
     else:       
         screenFor = 100 #days
         # a custom screening 

@@ -1,4 +1,5 @@
-from datetime import date,datetime,timedelta
+from datetime import timedelta,date,datetime
+from auxFuncs import getDate_today,getDate_yesterday,convertDate
 import pandas_datareader.data as web
 
 import matplotlib.pyplot as plt
@@ -13,10 +14,10 @@ mpl.__version__
 
 style.use('ggplot')
 
-start = datetime(2000, 1, 1)
-end = date.today()
+start = convertDate("1-1-2000")
+end = date.today() - timedelta(days=1)
 
-df = web.DataReader("HDFCLIFE.NS", 'yahoo', start, end)
+df = web.DataReader("MGL.NS", 'yahoo', start, end)
 
 dfNiftyMidcap = web.DataReader("^NSEI",'yahoo',start,end)
 
@@ -29,7 +30,8 @@ dfreg['Index'] = dfNiftyMidcap['Adj Close']
 dfreg.fillna(value=-99999, inplace=True)
 
 # We want to separate 1 percent of the data to forecast
-forecast_out = int(math.ceil(0.01 * len(dfreg)))
+#forecast_out = int(math.ceil(0.01 * len(dfreg)))
+forecast_out = 6
 
 # Separating the label here, we want to predict the AdjClose
 forecast_col = 'Adj Close'

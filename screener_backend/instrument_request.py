@@ -53,14 +53,14 @@ class INSTRUMENT_DATA(object):
 # Script standalone selftest
 if __name__ == '__main__':
     
-    from auxFuncs import convertDate
+    from auxFuncs import convertDate,getDate_today
     
-    apiType = "YAHOO"
+    apiType = "NSE"
     if apiType == "NSE":
         # Load data of equity from SBIN
         temp_obj = INSTRUMENT_DATA('SBIN')
         # Fetch the values from
-        temp_obj.requestData(convertDate('01/01/2019'),convertDate('01/01/2020'))
+        temp_obj.requestData(convertDate('01/01/2020'),getDate_today())
         # Display the dataframe with the required results
         print(temp_obj.get_primeData().tail())
         
