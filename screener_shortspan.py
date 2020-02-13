@@ -73,9 +73,6 @@ def Bounce_IPB_Stocks(stocksList, stockInfo_source = 'NSE', customSession = None
         '150 Bounce Long' : [],
         'ImpulsePullBack' : [],
     }
-    # ensure this value is yesterday if the script is run in the morning before trading session
-    # or should be today if the analysis is done after the close of the market for the present
-    # day
     startDate = getDate_previous(historialDataTicks,endDate)
 
     printProgressBar(0,len(stocksList),prefix='Progress:', suffix = '{:15s}'.format('') , length = 50)
@@ -92,28 +89,27 @@ def Bounce_IPB_Stocks(stocksList, stockInfo_source = 'NSE', customSession = None
             # get the required technical data using the talib interfaces to perform the bounce screening
             # of the instruments        
             technical_obj = TECH_FXS(primaryData)
-            # EMAs are Pandas Series type
-            EMA6 = technical_obj.getEMA(6)
-            EMA18 = technical_obj.getEMA(18)
-            EMA20 = technical_obj.getEMA(20)
-            EMA50 = technical_obj.getEMA(50)
-            EMA100 = technical_obj.getEMA(100)
-            EMA150 = technical_obj.getEMA(150)
-            # As the EMA values are not accurate for longer time periods, we use 
-            # SMA as substitute and manually verify the same for the screened 
-            # instruments
-            # MACD and STOCHASTICS are both Pandas Dataframe type
-            MACD12 = technical_obj.getMACD(12,26,9)
-            MACD50 = technical_obj.getMACD(50,100,9)
-            MACD18 = technical_obj.getMACD(18,50,9)
-            STOCH5_33 = technical_obj.getSTOCH(5,3,3)
-            del technical_obj
-            
             try:
-                if "ERROR" in [EMA6,EMA18,EMA20,EMA50,EMA100,EMA150,MACD12,MACD18,MACD50,STOCH5_33]:
-                    continue
+                # EMAs are Pandas Series type
+                EMA6 = technical_obj.getEMA(6)
+                EMA18 = technical_obj.getEMA(18)
+                EMA20 = technical_obj.getEMA(20)
+                EMA50 = technical_obj.getEMA(50)
+                EMA100 = technical_obj.getEMA(100)
+                EMA150 = technical_obj.getEMA(150)
+                # As the EMA values are not accurate for longer time periods, we use 
+                # SMA as substitute and manually verify the same for the screened 
+                # instruments
+                # MACD and STOCHASTICS are both Pandas Dataframe type
+                MACD12 = technical_obj.getMACD(12,26,9)
+                MACD50 = technical_obj.getMACD(50,100,9)
+                MACD18 = technical_obj.getMACD(18,50,9)
+                STOCH5_33 = technical_obj.getSTOCH(5,3,3)
             except:
-                pass
+                # skip current instrument if there is calculation exception from the TALIB wrapper. Generally occurs
+                # with YAHOO FINANCIALS due to missing data. 
+                continue
+            del technical_obj
 
             if position == 'long':
                 # create the object for long position screening
@@ -156,8 +152,8 @@ def Bounce_IPB_Stocks(stocksList, stockInfo_source = 'NSE', customSession = None
 
             else:
                 # code the short position calculations
+                print("Short Position Scans still not supported")                
                 pass 
-                print("Short Position Scans still not supported")
                 sys.exit(0)
         printProgressBar(idx+1,len(stocksList),prefix='Progress:', suffix = '{:15s}'.format(currentInstrument), length = 50)
                 
@@ -176,7 +172,11 @@ def Bounce_IPB_Stocks(stocksList, stockInfo_source = 'NSE', customSession = None
                   
 if __name__ == '__main__':
     
+    # ensure this value is yesterday if the script is run in the morning before trading session
+    # or should be today if the analysis is done after the close of the market for the present
+    # day    
     stocksList = NSE_TradedStocks(getDate_today())
+    # Local StockScreening Lists
     #stocksList = [*Nifty50(),*NiftyNext50()]
     #stocksList = NSE_localAll()
     isDaily = True

@@ -7,6 +7,9 @@ Created on Tue Jan 21 07:21:41 2020
 
 from talib.abstract import EMA,SMA,MACD,STOCH
 
+class TALIB_CALC_ERROR(Exception):
+    pass
+
 class TECH_FXS(object):
     
     def __init__(self,ipData):
@@ -16,13 +19,13 @@ class TECH_FXS(object):
         try:
             return EMA(self.data,timeperiod=period)
         except:
-            return "ERROR"
+            raise TALIB_CALC_ERROR("EMA Calculation Error")
     
     def getSMA(self,period=50):
         try:
             return SMA(self.data,timeperiod=period)
         except:
-            return "ERROR"
+            raise TALIB_CALC_ERROR("SMA Calculation Error")
     
     def getMACD(self,fastP=12,slowP=26,signalP=9):
         try:
@@ -30,13 +33,13 @@ class TECH_FXS(object):
                         slowperiod=slowP,
                         signalperdiod=signalP)
         except:
-            return "ERROR"
+            raise TALIB_CALC_ERROR("MACD Calculation Error")
     
     def getSTOCH(self,fastKPeriod=14,slowKPeriod=5,slowDPeriod=5):
         try:
             return STOCH(self.data,fastk_period=fastKPeriod,slowk_period=slowKPeriod,slowd_period=slowDPeriod)
         except:
-            return "ERROR"
+            raise TALIB_CALC_ERROR("MACD Calculation Error")
         
     def getVWAP(self):
         try:
@@ -45,4 +48,5 @@ class TECH_FXS(object):
             vwap = cumulitivePrice / cumulitiveVol
             return vwap
         except:
-            return "ERROR"
+            raise TALIB_CALC_ERROR("VWAP Calculation Error")
+            

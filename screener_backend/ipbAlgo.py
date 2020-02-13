@@ -21,7 +21,7 @@ class IPBSCREENER(object):
         self.EMA100 = EMA100.tolist()
         self.MACD12 = MACD12    
         self.dates = list(dataFrame.index.values)
-        self.patterPos = []
+        self.patternPos = []
         
     def longScreener_initParams(self,EMA_checkPeriod,EMA_checkType):
         
@@ -89,7 +89,7 @@ class IPBSCREENER(object):
                     # is it a SH followed by IB candle
                  or ((self.high[position] > self.high[position+1]) and (self.low[position] < self.low[position+1]))
                  ):  
-                self.patterPos.append(self.dates[position])
+                self.patternPos.append(self.dates[position])
                 return True
             return False
         except:
@@ -115,7 +115,7 @@ class IPBSCREENER(object):
                 isPullBack_pattern = isPullBack_pattern or self.checkIPB_pattern(position,swingHighPeriod)
                 
             if self.EMA_longState and isPullBack_pattern:
-                return [True,self.patterPos]
+                return [True,self.patternPos]
             else:
                 return [False,'']
         except:

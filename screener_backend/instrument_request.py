@@ -55,10 +55,10 @@ if __name__ == '__main__':
     
     from auxFuncs import convertDate,getDate_today
     
-    apiType = "NSE"
+    apiType = "YAHOO"
     if apiType == "NSE":
         # Load data of equity from SBIN
-        temp_obj = INSTRUMENT_DATA('SBIN')
+        temp_obj = INSTRUMENT_DATA('PVR')
         # Fetch the values from
         temp_obj.requestData(convertDate('01/01/2020'),getDate_today())
         # Display the dataframe with the required results
@@ -80,7 +80,7 @@ if __name__ == '__main__':
             sess.proxies.update(proxies)
             
         # Load data of equity from SBIN
-        temp_obj = INSTRUMENT_DATA('SBIN',apiType)    
+        temp_obj = INSTRUMENT_DATA('PVR',apiType)    
         # Fetch the values from
         temp_obj.requestData(convertDate('01/01/2019'),convertDate('23/01/2020'),customSession=sess) 
         # Display the dataframe with the required results
