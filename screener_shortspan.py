@@ -4,6 +4,7 @@ Created on Mon Jan 20 22:50:10 2020
 
 @author: Balarka
 """
+# import required modules from project
 from screener_backend.nselist import NSE_TradedStocks,Nifty50,NiftyNext50,NSE_localAll
 from screener_backend.auxFuncs import convertDate,getDate_previous,getDate_today,getDate_yesterday,printProgressBar
 from screener_backend.auxFuncs import getPD_date,timeDiff_inDays
@@ -12,17 +13,57 @@ from screener_backend.technicalWrapper import TECH_FXS
 from screener_backend.bounceAlgo import BOUNCESCREENER
 from screener_backend.ipbAlgo import IPBSCREENER
 
+# import required native modules
 import sys
 import requests
 
-def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
-                 volumeCutoff=15000000, position='long', endDate=getDate_today(),historialDataTicks=3650,
-                 ignoreStochastic = False, stochasticThreshold = 30, stochasticThreshold_period=3, 
-                 ignoreEMA=False,EMA_check='All',
-                 bounce18=False, bounce20=False, bounce50=True, bounce100=False, bounce150=False,
-                 useDelta=False,delta18=0.001,delta20=0.001,delta50=0.005,delta100=0.01,delta150=0.01,
-                 ipbEMA_checkPeriod = 5,ipbMACD_filter=True,ipb_EMA_check='18>50', ipb_tracePeriod=15,
-                 ):
+""" The screener functions that calls the screening algorithms based on user parameters and returns any matching instruments to the user.
+    @Parameters@
+           Param                :   Description
+        -> stocksList           :   List of instruments to be screened
+        -> stockInfo_source     :   Source to fetch instrument historical data ('NSE' for NSE or 'YAHOO' YAHOO_Financials)
+        -> customSession        :   Use a custom requests session with proxy configurations (Only for 'YAHOO' stockInfo_source
+                                    option, for NSE this is ignored)
+        -> endDate              :   EndDate for the historical data fetched
+        -> historicalDataTicks  :   Number of days prior to the EndDate for which the historical data is fetched
+        -> position             :   Option to choose to screen for Bullish or Bearish postions ('long' for Bullish and 
+                                    'short' for bearish)
+        -> ignoreStochastic     :   Ignore the Stochastic check while screening the instruments (True-Ignore filter)
+        -> stochasticThreshold  :   Threshold value for the Stochastic Check (Ignored if ignoreStochastic is True)
+                                    Pass: InstrumentStochastic <= stochasticThreshold 
+        -> stochTest_period     :   Number of days considered for checking the stochasticThreshold condition (Ignored if ignoreStochastic 
+                                    is True)
+        -> ignoreEMA            :   Ignore the EMA check while screening the instruments (True-Ignore filter)
+        -> EMA_check            :   Type of EMA filter to be used ('All' for EMA18>EMA50>EMA100 or 
+                                    'Step' for EMA18>EMA50 in 18 Bounce, EMA50>EMA100 in 50 Bounce, 100 Bounce and 150 Bounce.
+                                    Ignored if ignoreEMA is True)
+        -> bounce18             :   Scan the instruments for Bounce18 setup
+        -> bounce50             :   Scan the instruments for Bounce50 setup
+        -> bounce100            :   Scan the instruments for Bounce100 setup
+        -> bounce150            :   Scan the instruments for Bounce150 setup
+        -> useDelta             :   Use a small delta on the OHLC values while screening for setups to compensate for inaccurate 
+                                    EMA calculations if required (True-Use delta adjustments)
+        -> delta18              :   The delta value as percent to be used in Bounce18 setup (Ignored if useDelta is False)
+        -> delta50              :   The delta value as percent to be used in Bounce50 setup (Ignored if useDelta is False)
+        -> delta100             :   The delta value as percent to be used in Bounce100 setup (Ignored if useDelta is False)
+        -> delta150             :   The delta value as percent to be used in Bounce150 setup (Ignored if useDelta is False)
+        -> ipbEMA_checkPeriod   :   Number of days considered for checking the EMA condition 
+        -> ipbMACD_filter       :   Option to use the MACD filter together with the EMA crossover in for IPB setup
+                                    (True-Enable MACD based screening)
+        -> ipb_EMA_check        :   Type of EMA check to be performed ('All' for EMA18>EMA50>EMA100, '18>50' for EMA18>EMA50)
+        -> ipb_tracePeriod      :   Number of days considered for checking the EMA crossover or MACD screening for IPB setup 
+    @Return@
+        A dictionary of instruments that fit the trade setups based on the user screening parameters.
+    """
+def Bounce_IPB_Stocks(stocksList, stockInfo_source = 'NSE', customSession = None,
+                      endDate=getDate_today(),historialDataTicks=3650,
+                      volumeCutoff=15000000, position='long', 
+                      ignoreStochastic = False, stochasticThreshold = 30, stochTest_period=3, 
+                      ignoreEMA=False,EMA_check='All',
+                      bounce18=False, bounce20=False, bounce50=True, bounce100=False, bounce150=False,
+                      useDelta=False,delta18=0.001,delta20=0.001,delta50=0.005,delta100=0.01,delta150=0.01,
+                      ipbEMA_checkPeriod = 5,ipbMACD_filter=True,ipb_EMA_check='18>50', ipb_tracePeriod=5,
+                      ):
        
     screenedInstruments = {
         '18 Bounce Long'  : [],
@@ -77,7 +118,7 @@ def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
             if position == 'long':
                 # create the object for long position screening
                 bounceScreener_obj = BOUNCESCREENER(primaryData,EMA18,EMA20,EMA50,EMA100,EMA150,MACD18,MACD50,STOCH5_33)
-                bounceScreener_obj.longScreener_initParams(ignoreStochastic,stochasticThreshold,stochasticThreshold_period,
+                bounceScreener_obj.longScreener_initParams(ignoreStochastic,stochasticThreshold,stochTest_period,
                                                            ignoreEMA,EMA_check)
 
                 if bounce18:
@@ -108,7 +149,7 @@ def screenStocks(stocksList, stockInfo_source = 'NSE', customSession = None,
                             dateDiff = timeDiff_inDays(endDate,dateVal)
                             
                         if dateDiff <= ipb_tracePeriod:
-                            dateStr = '*'+'*'.join([getPD_date(dateVal).strftime("%d_%m_%Y") for dateVal in tempRes[1]])
+                            dateStr = '[ '+', '.join([getPD_date(dateVal).strftime("%d_%m_%Y") for dateVal in tempRes[1]])+']'
                             instrumentStr = currentInstrument + dateStr
                             screenedInstruments['ImpulsePullBack'].append(instrumentStr)  
                 del ipbScreener_obj                              
@@ -168,10 +209,10 @@ if __name__ == '__main__':
         endDate = getDate_today()
         print('Results with Strict Screening')
         # Daily
-        result = screenStocks(stocksList,stockInfo_source=stockSource,customSession=sess,
-                              endDate=endDate,volumeCutoff=10000,historialDataTicks=365,
-                              bounce18=True,bounce50=True,bounce100=True,
-                              useDelta=False,ipbMACD_filter=False,ipb_tracePeriod=5)
+        result = Bounce_IPB_Stocks(stocksList,stockInfo_source=stockSource,customSession=sess,
+                                   endDate=endDate,volumeCutoff=10000,historialDataTicks=365,
+                                   bounce18=True,bounce50=True,bounce100=True,
+                                   useDelta=False,ipbMACD_filter=False,ipb_tracePeriod=3)
         if result[0] == 0:
             for key,value in result[1].items():
                 print('{}:{}\n'.format(key,value))
@@ -179,12 +220,12 @@ if __name__ == '__main__':
             print('No instruments for screening criteria')
         print('\nResults with Lenient Screening')
         # Daily
-        result = screenStocks(stocksList,stockInfo_source=stockSource,customSession=sess,
-                              endDate=endDate,volumeCutoff=10000,historialDataTicks=365,
-                              EMA_check = 'Step',
-                              ignoreStochastic = True,
-                              bounce18=True,bounce50=True,bounce100=True,
-                              useDelta=False,ipbMACD_filter=False,ipb_tracePeriod=5)
+        result = Bounce_IPB_Stocks(stocksList,stockInfo_source=stockSource,customSession=sess,
+                                   endDate=endDate,volumeCutoff=10000,historialDataTicks=365,
+                                   EMA_check = 'Step',
+                                   ignoreStochastic = True,
+                                   bounce18=True,bounce50=True,bounce100=True,
+                                   useDelta=False,ipbMACD_filter=False,ipb_tracePeriod=3)
         if result[0] == 0:
             for key,value in result[1].items():
                 print('{}:{}\n'.format(key,value))
@@ -198,10 +239,10 @@ if __name__ == '__main__':
         for i in range(screenFor):
             dateTemp = getDate_previous(i,getDate_yesterday())
             print(dateTemp.strftime("%d_%m"))
-            result = screenStocks(stocksList,stockInfo_source=stockSource,customSession=sess,
-                                  volumeCutoff=1000000,endDate=dateTemp,historialDataTicks=365,
-                                  bounce18=True,bounce50=True,bounce100=True,
-                                  useDelta=False)
+            result = Bounce_IPB_Stocks(stocksList,stockInfo_source=stockSource,customSession=sess,
+                                       volumeCutoff=1000000,endDate=dateTemp,historialDataTicks=365,
+                                       bounce18=True,bounce50=True,bounce100=True,
+                                       useDelta=False)
             if result[0] == 0:
                 totalHitDays += 1
                 resultList.append('>>{}\n{}\n{}\n'.format(dateTemp.strftime("%d_%m_%Y"),str(result[1]),'-'*120)) 
