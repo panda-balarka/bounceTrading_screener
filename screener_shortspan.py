@@ -77,14 +77,17 @@ def Bounce_IPB_Stocks(stocksList, stockInfo_source = 'NSE', customSession = None
 
     printProgressBar(0,len(stocksList),prefix='Progress:', suffix = '{:15s}'.format('') , length = 50)
     for idx,currentInstrument in enumerate(stocksList):
-        # fetch histrorical data of required equity instrument
-        temp_obj = INSTRUMENT_DATA(currentInstrument,stockInfo_source)
-        temp_obj.requestData(startDate,endDate,customSession)
-        primaryData = temp_obj.get_primeData()
-        del temp_obj
-
-        # perform a volume sanity check
-        meanVolume = primaryData['volume'].mean()
+        try:
+            # fetch histrorical data of required equity instrument
+            temp_obj = INSTRUMENT_DATA(currentInstrument,stockInfo_source)
+            temp_obj.requestData(startDate,endDate,customSession)
+            primaryData = temp_obj.get_primeData()
+            del temp_obj
+            
+            # perform a volume sanity check
+            meanVolume = primaryData['volume'].mean()
+        except:
+            continue        
         if meanVolume >= volumeCutoff:
             # get the required technical data using the talib interfaces to perform the bounce screening
             # of the instruments        
@@ -175,7 +178,11 @@ if __name__ == '__main__':
     # ensure this value is yesterday if the script is run in the morning before trading session
     # or should be today if the analysis is done after the close of the market for the present
     # day    
-    stocksList = NSE_TradedStocks(getDate_today())
+    endDate = getDate_today()
+    try:
+        stocksList = NSE_TradedStocks(endDate)
+    except:
+        stocksList = NSE_TradedStocks(getDate_yesterday())
     # Local StockScreening Lists
     #stocksList = [*Nifty50(),*NiftyNext50()]
     #stocksList = NSE_localAll()
@@ -206,7 +213,6 @@ if __name__ == '__main__':
 
     # Perform a daily scan or a customised scan
     if isDaily:
-        endDate = getDate_today()
         print('Results with Strict Screening')
         # Daily
         result = Bounce_IPB_Stocks(stocksList,stockInfo_source=stockSource,customSession=sess,

@@ -18,6 +18,8 @@ from screener_backend.trendRetracementAlgo import TREND_RETRACEMENTSCREENER
 import sys
 import requests
 from statistics import mean
+import pandas as pd
+import os
 
 def TrendRetracement_Stocks(stocksList, stockInfo_source = 'NSE', customSession = None,
                             volumeCutOff=1500000,position='long',
@@ -31,14 +33,14 @@ def TrendRetracement_Stocks(stocksList, stockInfo_source = 'NSE', customSession 
     
     printProgressBar(0,len(stocksList),prefix='Progress:', suffix = '{:15s}'.format('') , length = 50)
     for idx,currentInstrument in enumerate(stocksList):
-        # fetch histrorical data of required equity instrument
-        temp_obj = INSTRUMENT_DATA(currentInstrument,stockInfo_source)
-        temp_obj.requestData(startDate,endDate,customSession)
-        primaryData = temp_obj.get_primeData()
-        del temp_obj         
-        
-        # perform a volume sanity check
         try:
+            # fetch histrorical data of required equity instrument
+            temp_obj = INSTRUMENT_DATA(currentInstrument,stockInfo_source)
+            temp_obj.requestData(startDate,endDate,customSession)
+            primaryData = temp_obj.get_primeData()
+            del temp_obj         
+        
+            # perform a volume sanity check
             meanVolume = mean(primaryData['volume'].tolist()[-int(historialDataTicks*0.1)-1:])
         except:
             continue
@@ -52,7 +54,8 @@ def TrendRetracement_Stocks(stocksList, stockInfo_source = 'NSE', customSession 
                 EMA40 = technical_obj.getEMA(40)
                 SMA50 = technical_obj.getSMA(50)
                 SMA100 = technical_obj.getSMA(100)
-                SMA150 = technical_obj.getSMA(150)                   
+                SMA150 = technical_obj.getSMA(150)
+                # The Value of SMA200 is inaccurate for historical data periods less than 5 years
                 SMA200 = technical_obj.getSMA(200)
             except:
                 continue
@@ -75,7 +78,8 @@ def TrendRetracement_Stocks(stocksList, stockInfo_source = 'NSE', customSession 
             
 if __name__=="__main__":
     
-    stocksList = NSE_TradedStocks(getDate_today())
+    endDate = getDate_today()
+    stocksList = NSE_TradedStocks(endDate)
     #stocksList = [*Nifty50(),*NiftyNext50()]
     #stocksList = NSE_localAll()
     
@@ -104,8 +108,16 @@ if __name__=="__main__":
         sess = None 
         
     result = TrendRetracement_Stocks(stocksList,stockInfo_source=stockSource,customSession=sess,
-                                     volumeCutOff = 20000,position='long',
-                                     endDate=getDate_today(),historialDataTicks=730,trendTracePeriod=3)
-    
-    print(result)
+                                     volumeCutOff = 30000,position='long',
+                                     endDate=endDate,historialDataTicks=1800,trendTracePeriod=1)
+    if len(result.keys()) > 0:
+        tempDict = {
+                    'Instruments'   : list(result.keys()),
+                    'Description'   : list(result.values())
+                    }
+        scanDf = pd.DataFrame.from_dict(tempDict)
+        if os.path.exists("TrendRetracement_Scan.xlsx"): os.remove("TrendRetracement_Scan.xlsx") 
+        scanDf.to_excel("TrendRetracement_Scan.xlsx")        
+    else:
+        print("No Instruments matching LongTrendRetracement Setup Found")
 
