@@ -21,13 +21,11 @@ class TREND_RETRACEMENTSCREENER(object):
         self.SMA100 = SMA100.tolist()
         self.SMA150 = SMA150.tolist()
         self.SMA200 = SMA200.tolist()  
-        self.dates = list(dataFrame.index.values)
-        self.tracePeriod = 3
-        self.skipBullishConfirmation = False
+        self.dates = list(dataFrame.index.values)        
         self.hitPos = []    
         self.infoLst = []
     
-    def checkEMAstate(self,emaPeriod=15):
+    def checkEMAstate(self,tracePeriod=3,emaPeriod=15):
         try:
             EMA20x40_flag = True
             SMA50x100_flag = True
@@ -52,7 +50,7 @@ class TREND_RETRACEMENTSCREENER(object):
                     break  
             
             # CP > SMA200
-            for value in range(self.tracePeriod):
+            for value in range(tracePeriod):
                 if self.close[-value-2] > self.SMA200[-value-2]:
                     CPx200_flag = True
                     break
@@ -70,7 +68,7 @@ class TREND_RETRACEMENTSCREENER(object):
         except:
             return False
     
-    def testMA_Cross(self,idx):
+    def testMA_Cross(self,idx,skipBullish_candleCheck=False):
         
         try:
             bounceFlag = False
@@ -95,37 +93,34 @@ class TREND_RETRACEMENTSCREENER(object):
                 bounceFlag |= True
             
             # Check if the next candle is a Bullish candle to confrim bounce for low risk scans
-            if not self.skipBullishConfirmation:
+            if not skipBullish_candleCheck:
                 bounceFlag &= (self.open[idx+1] <= self.close[idx+1])
                 self.infoLst.append('Bullish Confirmation Candle Present')
-                
-                
+                  
             return bounceFlag
         except:
             return False
         
             
-    def findPivot_dip(self):
+    def findPivot_dip(self,tracePeriod=3,skipBullish_candleCheck=False):
         
         try:
-            for value in range(self.tracePeriod):
+            for value in range(tracePeriod):
                 if self.low[-value-2] < self.low[-value-1] and self.low[-value-2] < self.low[-value-3]:
                     self.infoLst.append("Pivot at {}".format(self.dates[-value-2]))
-                    if self.testMA_Cross((-value-2)):
+                    if self.testMA_Cross((-value-2),skipBullish_candleCheck):
                         return True
             return False
         except:
             return False
                 
         
-    def isInstrumentValid(self,tracePeriod=3,EMAcheckPeriod=15,skipBullish_confirmation=False):
+    def isInstrumentValid(self,EMAcheckPeriod=15,tracePeriod=3,skipBullish_confirmation=False):
         
-        self.skipBullishConfirmation = skipBullish_confirmation        
-        self.traceperiod = tracePeriod
-        EMAstate = self.checkEMAstate(EMAcheckPeriod)
+        EMAstate = self.checkEMAstate(tracePeriod,EMAcheckPeriod)
         
         if EMAstate:
-            pivotSearch_result = self.findPivot_dip()
+            pivotSearch_result = self.findPivot_dip(tracePeriod,skipBullish_confirmation)
             if pivotSearch_result:
                 return [True,','.join(self.infoLst)]
             else:

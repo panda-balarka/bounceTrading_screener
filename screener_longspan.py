@@ -64,7 +64,7 @@ def TrendRetracement_Stocks(stocksList, stockInfo_source = 'NSE', customSession 
             # create the object for long position screening 
             trendScreener_obj = TREND_RETRACEMENTSCREENER(primaryData,EMA20,EMA40,SMA50,SMA100,SMA150,SMA200)            
             if 'long' == position:  
-                tempRes = trendScreener_obj.isInstrumentValid(tracePeriod=trendTracePeriod,EMAcheckPeriod=EMAfilter_period)
+                tempRes = trendScreener_obj.isInstrumentValid(EMAcheckPeriod=EMAfilter_period,tracePeriod=trendTracePeriod)
                 if tempRes[0]: screenedInstruments[currentInstrument] = tempRes[1]
             elif 'short' == position:
                 # shorting not yet implemented as short positions on NSE,BSE have to be squared off on the same day
@@ -108,7 +108,7 @@ if __name__=="__main__":
         sess = None 
         
     result = TrendRetracement_Stocks(stocksList,stockInfo_source=stockSource,customSession=sess,
-                                     volumeCutOff = 30000,position='long',
+                                     volumeCutOff = 25000,position='long',
                                      endDate=endDate,historialDataTicks=1800,trendTracePeriod=1)
     if len(result.keys()) > 0:
         tempDict = {
