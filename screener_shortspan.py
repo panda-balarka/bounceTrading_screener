@@ -64,7 +64,8 @@ def Bounce_IPB_Stocks(stocksList, stockInfo_source = 'NSE', customSession = None
                       useDelta=False,delta18=0.001,delta20=0.001,delta50=0.005,delta100=0.01,delta150=0.01,
                       ipbEMA_checkPeriod = 5,ipbMACD_filter=True,ipb_EMA_check='18>50', ipb_tracePeriod=5,
                       ):
-       
+    
+    # dictionary to store instruments that meet the trade setup criteria
     screenedInstruments = {
         '18 Bounce Long'  : [],
         '20 Bounce Long'  : [],
@@ -73,24 +74,29 @@ def Bounce_IPB_Stocks(stocksList, stockInfo_source = 'NSE', customSession = None
         '150 Bounce Long' : [],
         'ImpulsePullBack' : [],
     }
+    # calculate the start date for to get the historical data download
     startDate = getDate_previous(historialDataTicks,endDate)
-
+    
+    # create a progressbar to track the screening process
     printProgressBar(0,len(stocksList),prefix='Progress:', suffix = '{:15s}'.format('') , length = 50)
+    # loop through the list of instruments sent to check for the trade setups
     for idx,currentInstrument in enumerate(stocksList):
         try:
             # fetch histrorical data of required equity instrument
             temp_obj = INSTRUMENT_DATA(currentInstrument,stockInfo_source)
             temp_obj.requestData(startDate,endDate,customSession)
+            # get the OHLC, Volume values for the instrument as a Dataframe
             primaryData = temp_obj.get_primeData()
             del temp_obj
             
-            # perform a volume sanity check
+            # perform a volume sanity check to filter out stocks with less liquidity 
             meanVolume = primaryData['volume'].mean()
         except:
+            # skip the instrument in case of an exception while calculating the mean if the stock is just a day old,
+            # or volume data is not available
             continue        
         if meanVolume >= volumeCutoff:
-            # get the required technical data using the talib interfaces to perform the bounce screening
-            # of the instruments        
+            # get the required technical data using the talib interfaces to perform the screening of the instruments        
             technical_obj = TECH_FXS(primaryData)
             try:
                 # EMAs are Pandas Series type
