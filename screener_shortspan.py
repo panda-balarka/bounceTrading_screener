@@ -222,7 +222,7 @@ if __name__ == '__main__':
         print('Results with Strict Screening')
         # Daily
         result = Bounce_IPB_Stocks(stocksList,stockInfo_source=stockSource,customSession=sess,
-                                   endDate=endDate,volumeCutoff=10000,historialDataTicks=365,
+                                   endDate=endDate,volumeCutoff=25000,historialDataTicks=365,
                                    bounce18=True,bounce50=True,bounce100=True,
                                    useDelta=False,ipbMACD_filter=False,ipb_tracePeriod=3)
         if result[0] == 0:
@@ -233,7 +233,7 @@ if __name__ == '__main__':
         print('\nResults with Lenient Screening')
         # Daily
         result = Bounce_IPB_Stocks(stocksList,stockInfo_source=stockSource,customSession=sess,
-                                   endDate=endDate,volumeCutoff=10000,historialDataTicks=365,
+                                   endDate=endDate,volumeCutoff=25000,historialDataTicks=365,
                                    EMA_check = 'Step',
                                    ignoreStochastic = True,
                                    bounce18=True,bounce50=True,bounce100=True,

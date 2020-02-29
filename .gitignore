@@ -24,3 +24,5 @@ screener_backend/__pycache__/trendRetracementAlgo.cpython-37.pyc
 TrendRetracement_Scan.xlsx
 screener_backend/__pycache__/__init__.cpython-36.pyc
 screener_backend/__pycache__/nselist.cpython-36.pyc
+screening_dataBuilder/rawData
+screening_dataBuilder/__pycache__/

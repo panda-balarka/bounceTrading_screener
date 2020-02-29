@@ -109,7 +109,7 @@ if __name__=="__main__":
         
     result = TrendRetracement_Stocks(stocksList,stockInfo_source=stockSource,customSession=sess,
                                      volumeCutOff = 25000,position='long',
-                                     endDate=endDate,historialDataTicks=1800,trendTracePeriod=1)
+                                     endDate=endDate,historialDataTicks=1800,trendTracePeriod=2)
     if len(result.keys()) > 0:
         tempDict = {
                     'Instruments'   : list(result.keys()),

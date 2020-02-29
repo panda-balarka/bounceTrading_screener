@@ -6,6 +6,7 @@ Created on Mon Jan 20 22:43:09 2020
 """
 
 from nsepy.history import get_price_list
+import pandas as pd
 
 
 def NSE_TradedStocks(dateval):
@@ -64,6 +65,11 @@ def NiftySmallCap_250():
             'KEC', 'MASFIN', 'CHALET', 'GAYAPROJ', 'IBULISL', 'KNRCON', 'LEMONTREE', 'JAICORPLTD', 
             'RENUKA', 'KARURVYSYA', 'ASHOKA', 'IRB', 'IIFL', 'SHOPERSTOP', 'CHENNPETRO', 'SPICEJET', 
             'REPCOHOME', 'SUNTECK', 'VSTIND', 'IBREALEST', 'RPOWER', 'MAHABANK', 'TASTYBITE']
+    
+# Load Instument Names from a local CSV file taken from NSE
+def NSE_localCSV(filepath):
+    df = pd.read_csv(filepath)
+    return (df.iloc[:,0].tolist())
 
 # Update this every month or so by downloading a new bhav copy
 def NSE_localAll():

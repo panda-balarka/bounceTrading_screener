@@ -114,6 +114,7 @@ class BOUNCESCREENER(object):
             return True
         except:
             return True    
+        
     def isMACD_BullBearCross_OK(self,MACDtype,tracePeriod):
         try:
             # macdhist provides the difference between macd and macdSignal, can be used to check when

@@ -94,7 +94,7 @@ class TREND_RETRACEMENTSCREENER(object):
             
             # Check if the next candle is a Bullish candle to confrim bounce for low risk scans
             if not skipBullish_candleCheck:
-                bounceFlag &= (self.open[idx+1] <= self.close[idx+1])
+                bounceFlag &= (self.open[-1] <= self.close[-1])
                 self.infoLst.append('Bullish Confirmation Candle Present')
                   
             return bounceFlag

@@ -9,6 +9,9 @@ import nsepy
 import pandas_datareader.data as web
 import requests
 
+class INSTRU_REQ_ERROR(Exception):
+    pass
+
 class INSTRUMENT_DATA(object):
     
     def __init__(self,symbol,infoSource='NSE'):
@@ -20,13 +23,19 @@ class INSTRUMENT_DATA(object):
             self.symbol = symbol
         self.API = infoSource
     
-    def requestData(self,startDate,endDate,customSession=None):
+    def requestData(self,startDate,endDate,customSession=None,isIndex=False):
         if self.API == 'NSE':
             # call the nsepy wrapper to fetch historical data of the
             # requested symbol from the NSE website
-            self.instrument_data = nsepy.get_history(self.symbol,
-                                               start=startDate,
-                                               end=endDate)
+            if isIndex:
+                self.instrument_data = nsepy.get_history(self.symbol,
+                                                   start=startDate,
+                                                   end=endDate,
+                                                   index=True)                
+            else:
+                self.instrument_data = nsepy.get_history(self.symbol,
+                                                   start=startDate,
+                                                   end=endDate)
         elif self.API == 'YAHOO':
             if customSession != None:
                 self.instrument_data = web.DataReader(self.symbol, 'yahoo', startDate, endDate, session=customSession)
@@ -36,7 +45,8 @@ class INSTRUMENT_DATA(object):
                                              'High':'high',
                                              'Low':'low',
                                              'Close':'close',
-                                             'Volume':'volume'},inplace=True)
+                                             'Volume':'volume',
+                                             '%Deliverble':'delivery'},inplace=True)
     
     def get_primeData(self):
         # function to return the primary OHLC and volume values as a
@@ -47,6 +57,13 @@ class INSTRUMENT_DATA(object):
     def get_allData(self):
         # return the whole dataframe from the NSEPY wrapper
         return self.instrument_data
+    
+    def get_Delivery(self):
+        if self.API == 'NSE':
+            return self.instrument_data.get(['delivery'])
+        elif self.API == 'YAHOO':
+            raise INSTRU_REQ_ERROR("DELIVERY INFORMATION NOT SUPPORTED WITH YAHOO FINANCIALS")
+        
         
 
         
@@ -55,12 +72,12 @@ if __name__ == '__main__':
     
     from auxFuncs import convertDate,getDate_today
     
-    apiType = "YAHOO"
+    apiType = "NSE"
     if apiType == "NSE":
         # Load data of equity from SBIN
-        temp_obj = INSTRUMENT_DATA('PVR')
+        temp_obj = INSTRUMENT_DATA('SBIN')
         # Fetch the values from
-        temp_obj.requestData(convertDate('01/01/2020'),getDate_today())
+        temp_obj.requestData(convertDate('01/01/2020'),convertDate('01/02/2020'))
         # Display the dataframe with the required results
         print(temp_obj.get_primeData().tail())
         
@@ -80,7 +97,7 @@ if __name__ == '__main__':
             sess.proxies.update(proxies)
             
         # Load data of equity from SBIN
-        temp_obj = INSTRUMENT_DATA('PVR',apiType)    
+        temp_obj = INSTRUMENT_DATA('SBIN',apiType)    
         # Fetch the values from
         temp_obj.requestData(convertDate('01/01/2019'),convertDate('23/01/2020'),customSession=sess) 
         # Display the dataframe with the required results
