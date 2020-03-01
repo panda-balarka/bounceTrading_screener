@@ -12,8 +12,6 @@ class BounceData_Dict(object):
                           'date'            : [],
                           'result'          : [],
                           'time4trade'      : [],
-                          'open1'           : [],   # normalise
-                          'high1'           : [],   # normalise
                           'low1'            : [],   # normalise
                           'close1'          : [],   # normalise
                           'openR'           : [],   # normalise
@@ -24,6 +22,9 @@ class BounceData_Dict(object):
                           'highC'           : [],   # normalise
                           'lowC'            : [],   # normalise
                           'closeC'          : [],   # normalise
+                          'entryP'          : [],   # normalise
+                          'stoplossP'       : [],   # normalise
+                          'targetP'         : [],   # normalise
                           'vol3avg'         : [],   # normalise
                           'macdHist3var'    : [],   # normalise
                           'stochastic'      : [],   # do not normalise
