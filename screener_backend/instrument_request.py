@@ -70,14 +70,14 @@ class INSTRUMENT_DATA(object):
 # Script standalone selftest
 if __name__ == '__main__':
     
-    from auxFuncs import convertDate,getDate_today
+    from auxFuncs import convertDate,getDate_today,getDate_yesterday
     
     apiType = "NSE"
     if apiType == "NSE":
         # Load data of equity from SBIN
         temp_obj = INSTRUMENT_DATA('SBIN')
         # Fetch the values from
-        temp_obj.requestData(convertDate('01/01/2020'),convertDate('01/02/2020'))
+        temp_obj.requestData(convertDate('01/01/2020'),getDate_yesterday())
         # Display the dataframe with the required results
         print(temp_obj.get_primeData().tail())
         
@@ -99,7 +99,7 @@ if __name__ == '__main__':
         # Load data of equity from SBIN
         temp_obj = INSTRUMENT_DATA('SBIN',apiType)    
         # Fetch the values from
-        temp_obj.requestData(convertDate('01/01/2019'),convertDate('23/01/2020'),customSession=sess) 
+        temp_obj.requestData(convertDate('01/01/2019'),getDate_yesterday(),customSession=None) 
         # Display the dataframe with the required results
         print(temp_obj.get_primeData().tail())
     

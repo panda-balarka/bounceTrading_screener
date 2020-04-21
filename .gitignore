@@ -27,3 +27,4 @@ screener_backend/__pycache__/nselist.cpython-36.pyc
 screening_dataBuilder/rawData
 screening_dataBuilder/__pycache__/
 screening_dataBuilder/CreateDataScan.log
+*.pyc

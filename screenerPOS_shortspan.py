@@ -17,7 +17,8 @@ from screener_backend.ipbAlgo import IPBSCREENER
 import sys
 import requests
 
-""" The screener functions that calls the screening algorithms based on user parameters and returns any matching instruments to the user.
+""" The screener functions that calls the positional screening algorithms based on user parameters and returns any matching instruments to 
+    the user.
     @Parameters@
            Param                :   Description
         -> stocksList           :   List of instruments to be screened
@@ -53,7 +54,7 @@ import requests
         -> ipb_EMA_check        :   Type of EMA check to be performed ('All' for EMA18>EMA50>EMA100, '18>50' for EMA18>EMA50)
         -> ipb_tracePeriod      :   Number of days considered for checking the EMA crossover or MACD screening for IPB setup 
     @Return@
-        A dictionary of instruments that fit the trade setups based on the user screening parameters.
+        A dictionary of instruments that fit the trade setups based on the user parameters.
     """
 def Bounce_IPB_Stocks(stocksList, stockInfo_source = 'NSE', customSession = None,
                       endDate=getDate_today(),historialDataTicks=3650,
@@ -90,7 +91,7 @@ def Bounce_IPB_Stocks(stocksList, stockInfo_source = 'NSE', customSession = None
             del temp_obj
             
             # perform a volume sanity check to filter out stocks with less liquidity 
-            meanVolume = primaryData['volume'].mean()
+            meanVolume = primaryData['volume'][-5:].mean()
         except:
             # skip the instrument in case of an exception while calculating the mean if the stock is just a day old,
             # or volume data is not available
@@ -126,6 +127,7 @@ def Bounce_IPB_Stocks(stocksList, stockInfo_source = 'NSE', customSession = None
                 bounceScreener_obj.longScreener_initParams(ignoreStochastic,stochasticThreshold,stochTest_period,
                                                            ignoreEMA,EMA_check)
 
+                # run the backend screening algorithm and add the respective instrument to its respective list value in the dictionary
                 if bounce18:
                     if bounceScreener_obj.isInstrument_bounce18longMatch(deltaAllowed=useDelta,deltaValue=delta18): screenedInstruments['18 Bounce Long'].append(currentInstrument)
                     
@@ -196,7 +198,7 @@ if __name__ == '__main__':
     isCustomProxy = False
     # Select the source for downloading the stock information. Option are NSE (from official NSE website using nsepy APIs or
     # YAHOO (from yahoo finance using panda-webreader APIs)
-    stockSource = 'NSE'
+    stockSource = 'YAHOO'
 
     # Configure any custom session to overcome proxy configurations
     if isCustomProxy:
@@ -222,7 +224,7 @@ if __name__ == '__main__':
         print('Results with Strict Screening')
         # Daily
         result = Bounce_IPB_Stocks(stocksList,stockInfo_source=stockSource,customSession=sess,
-                                   endDate=endDate,volumeCutoff=25000,historialDataTicks=365,
+                                   endDate=endDate,volumeCutoff=200000,historialDataTicks=365,
                                    bounce18=True,bounce50=True,bounce100=True,
                                    useDelta=False,ipbMACD_filter=False,ipb_tracePeriod=3)
         if result[0] == 0:
@@ -233,7 +235,7 @@ if __name__ == '__main__':
         print('\nResults with Lenient Screening')
         # Daily
         result = Bounce_IPB_Stocks(stocksList,stockInfo_source=stockSource,customSession=sess,
-                                   endDate=endDate,volumeCutoff=25000,historialDataTicks=365,
+                                   endDate=endDate,volumeCutoff=100000,historialDataTicks=365,
                                    EMA_check = 'Step',
                                    ignoreStochastic = True,
                                    bounce18=True,bounce50=True,bounce100=True,
